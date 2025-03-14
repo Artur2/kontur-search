@@ -65,7 +65,7 @@ impl Trie {
     ) -> Rc<RefCell<Node>> {
         if !node.nodes.contains_key(symbol) {
             let new_node_rc =
-                Trie::create_node_with_transition(symbol.clone(), transitional_node.clone());
+                Trie::create_node_with_transition(&symbol, transitional_node);
             let cloned_rc_from_new_node_rc = Rc::clone(&new_node_rc);
             node.nodes.insert(symbol.clone(), new_node_rc);
             cloned_rc_from_new_node_rc
@@ -79,10 +79,10 @@ impl Trie {
     }
 
     fn create_node_with_transition(
-        char: char,
-        transitional_node: Rc<TransitionalNode>,
+        char: &char,
+        transitional_node: &Rc<TransitionalNode>,
     ) -> Rc<RefCell<Node>> {
-        let mut node = Node::new(char);
+        let mut node = Node::new(char.clone());
         node.transitional_nodes.push(transitional_node.clone());
         let new_node_cell = RefCell::new(node); // mutable mem location
         let new_node_rc = Rc::from(new_node_cell); // reference to location
