@@ -8,4 +8,5 @@ mod trie;
 #[allow(unused_imports, dead_code)]
 
 fn main() {
+    println!("Hello, world!");
 }

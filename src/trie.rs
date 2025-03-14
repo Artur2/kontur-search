@@ -1,14 +1,91 @@
-use crate::node::Node;
+use crate::node::*;
+use std::{
+    cell::{RefCell, RefMut},
+    rc::Rc,
+};
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct Trie {
-    pub root: Box<Node>,
+    pub root: Rc<RefCell<Node>>,
 }
 
 impl Trie {
     pub fn new() -> Trie {
         Trie {
-            root: Box::new(Node::default()),
+            root: Rc::new(RefCell::new(Node::default())),
         }
+    }
+
+    pub fn add(&mut self, value: &str, priority: i64) {
+        let length: usize = value.len();
+        let value_as_bytes = value.as_bytes();
+        let transitional_node = TransitionalNode::new(priority, String::from(value));
+        let transitional_node_rc = Rc::from(transitional_node);
+
+        let mut root_node_mut = self.root.borrow_mut();
+        let mut rolling_node_rc = Rc::default();
+        let mut is_next_level = false;
+
+        for i in 0..length {
+            let symbol = value_as_bytes[i] as char;
+
+            if !is_next_level {
+                // Ничего не задано с рута
+                rolling_node_rc = Trie::create_or_rollout_another_symbol(
+                    &symbol,
+                    &transitional_node_rc,
+                    &mut root_node_mut,
+                );
+                is_next_level = true;
+            } else {
+                // Уже находимся в на уровне ниже рута
+                let mut new_rolling_node_rc = Rc::default();
+                match rolling_node_rc.try_borrow_mut() {
+                    Ok(mut inner_node_mut) => {
+                        new_rolling_node_rc = Trie::create_or_rollout_another_symbol(
+                            &symbol,
+                            &transitional_node_rc,
+                            &mut inner_node_mut,
+                        );
+                    }
+                    Err(_) => {
+                        panic!("Какого хрена мы не можем заимствовать")
+                    }
+                }
+
+                rolling_node_rc = new_rolling_node_rc;
+            }
+        }
+    }
+
+    pub fn create_or_rollout_another_symbol(
+        symbol: &char,
+        transitional_node: &Rc<TransitionalNode>,
+        node: &mut RefMut<Node>,
+    ) -> Rc<RefCell<Node>> {
+        if !node.nodes.contains_key(symbol) {
+            let new_node_rc =
+                Trie::create_node_with_transition(symbol.clone(), transitional_node.clone());
+            let cloned_rc_from_new_node_rc = Rc::clone(&new_node_rc);
+            node.nodes.insert(symbol.clone(), new_node_rc);
+            cloned_rc_from_new_node_rc
+        } else {
+            Rc::clone(&node.nodes[&symbol])
+        }
+    }
+
+    pub fn search(value: &str, max_results: i32) -> Vec<Rc<TransitionalNode>> {
+        todo!("Сделать после Add");
+    }
+
+    fn create_node_with_transition(
+        char: char,
+        transitional_node: Rc<TransitionalNode>,
+    ) -> Rc<RefCell<Node>> {
+        let mut node = Node::new(char);
+        node.transitional_nodes.push(transitional_node.clone());
+        let new_node_cell = RefCell::new(node); // mutable mem location
+        let new_node_rc = Rc::from(new_node_cell); // reference to location
+        new_node_rc
     }
 }

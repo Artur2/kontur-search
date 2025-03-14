@@ -1,23 +1,46 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 
-#[derive(Debug)]
 pub struct Node {
     pub key: char,
-    pub priority: i64,
+    pub nodes: HashMap<char, Rc<RefCell<Node>>>,
+    pub transitional_nodes: Vec<Rc<TransitionalNode>>
+}
+
+#[derive(Default)]
+pub struct TransitionalNode {
     pub full_value: String,
-    pub parent: Option<Box<Node>>,
-    pub child_nodes: HashMap<char, Box<Node>>,
-    pub transitional_nodes: Vec<Box<Node>>,
+    pub priority: i64,
+}
+
+impl Node {
+    pub fn new(key: char) -> Node {
+        let mut default = Node::default();
+        default.key = key;
+
+        default
+    }
+
+    pub fn is_default(&self) -> bool {
+        self.key == char::default()
+    }
+}
+
+impl TransitionalNode {
+    pub fn new(priority: i64, full_value: String) -> TransitionalNode {
+        TransitionalNode {
+            priority,
+            full_value
+        }
+    }
 }
 
 impl Default for Node {
     fn default() -> Self {
         Node {
             key: char::default(),
-            parent: None,
-            priority: 0,
-            full_value: String::default(),
-            child_nodes: HashMap::new(),
+            nodes: HashMap::new(),
             transitional_nodes: Vec::new(),
         }
     }
