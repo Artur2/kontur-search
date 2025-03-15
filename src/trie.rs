@@ -65,7 +65,6 @@ impl Trie {
         let value_as_bytes = value.as_bytes();
         let root_node = self.root.borrow();
         let mut is_next_level = false;
-        let mut value_found = true;
         let mut rolling_node_rc = Rc::default();
 
         for i in 0..value_length {
@@ -91,14 +90,9 @@ impl Trie {
                 if found_rolling_node {
                     rolling_node_rc = new_rolling_node_rc;
                 } else {
-                    value_found = false;
                     break;
                 }
             }
-        }
-
-        if !value_found {
-            return results;
         }
 
         let mut resulting_node = rolling_node_rc.borrow_mut();

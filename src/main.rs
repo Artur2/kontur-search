@@ -1,19 +1,131 @@
 use crate::trie::Trie;
+use clap::Parser;
+use std::fs;
+use std::io::stdin;
 
 mod node;
 mod trie;
 
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+pub struct Cli {
+    /// Path to line-by-line words file to absorb by trie, optionally with priority
+    #[arg(short, long, default_value = "directories.txt")]
+    pub words_source_path: String,
+
+    /// Path to line-by-line words file to search in trie
+    #[arg(short, long)]
+    pub search_words_path: Option<String>,
+
+    /// Search by passing words in terminal
+    #[arg(short, long, default_value_t = false)]
+    pub interactive_search: bool,
+
+    /// Default count of found results
+    #[arg(short, long, default_value_t = 100)]
+    pub max_results_count: i32,
+
+    /// Output results to file, instead of terminal
+    #[arg(short, long)]
+    pub results_file: Option<String>,
+
+    /// Do not output to terminal anything
+    #[arg(short, long, default_value_t = false)]
+    pub quiet: bool,
+}
+
 fn main() {
+    let args = Cli::parse();
+
+    if args.words_source_path.is_empty() {
+        println!("Words source path is empty");
+        return;
+    }
+
+    if let Err(_) = fs::exists(&args.words_source_path) {
+        println!("Words source path does not exist");
+        return;
+    }
+
     let mut trie = Trie::new();
-    trie.add("Test", 10);
-    trie.add("Test2", 20);
-    trie.add("Test3", 30);
-    trie.add("TT", 5);
-    trie.add("Testt", 22);
+    fs::read_to_string(&args.words_source_path)
+        .unwrap()
+        .lines()
+        .for_each(|line| {
+            let mut word_passed = false;
+            let mut priority_passed = false;
+            let mut passing_word = String::new();
+            let mut passing_priority = 0;
+            line.split(" ").for_each(|word| {
+                if !word_passed {
+                    passing_word = word.to_string();
+                    word_passed = true;
 
-    let values = trie.search("Test", 10);
+                    return;
+                }
 
-    for value in values {
-        println!("Value of node: {}, priority: {}", value.full_value, value.priority);
+                if !priority_passed {
+                    passing_priority = word.parse::<i64>().unwrap_or(0);
+                    priority_passed = true;
+                }
+            });
+
+            trie.add(&passing_word, passing_priority);
+        });
+
+    if args.interactive_search {
+        println!("Interactive search is on");
+
+        loop {
+            let mut input = String::new();
+            stdin().read_line(&mut input).unwrap();
+
+            let result = trie.search(&input, args.max_results_count);
+
+            result
+                .iter()
+                .for_each(|r| println!("Value: {}, Priority: {}", r.full_value, r.priority));
+        }
+    }
+
+    if args.search_words_path.is_none() {
+        println!("Words source path is empty");
+    }
+
+    if let Err(_) = fs::exists(&args.search_words_path.unwrap()) {
+        println!("Search words path does not exist");
+        return;
+    }
+
+    let results_to_terminal = args.results_file.is_none();
+    let mut results_vector = vec![];
+    fs::read_to_string(&args.words_source_path)
+        .unwrap()
+        .lines()
+        .for_each(|line| {
+            if !args.quiet {
+                println!("Search term: {}", line);
+            }
+
+            let result = trie.search(&line, args.max_results_count);
+
+            if results_to_terminal {
+                result
+                    .iter()
+                    .for_each(|r| println!("Value: {}, Priority: {}", r.full_value, r.priority));
+            } else {
+                result.iter().for_each(|r| {
+                    results_vector.push(r.full_value.clone());
+                })
+            }
+        });
+
+    if !results_to_terminal {
+        if let Ok(_) = fs::write(
+            &args.results_file.unwrap(),
+            results_vector.join("\n").as_bytes(),
+        ) {
+            println!("result of search is written to file");
+        }
     }
 }
