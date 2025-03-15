@@ -70,13 +70,13 @@ impl Trie {
             cloned_rc_from_new_node_rc
         } else {
             let mut existing_rc = Rc::clone(&node.nodes[symbol]);
-            let clone_of_existing_rc = existing_rc.clone();
-            let mut borrowed_rc = existing_rc.borrow_mut();
+            let mut existing_node = existing_rc.borrow_mut();
 
-            borrowed_rc
+            existing_node
                 .transitional_nodes
                 .push(transitional_node.clone());
-            clone_of_existing_rc
+
+            existing_rc.clone()
         }
     }
 
@@ -121,10 +121,13 @@ impl Trie {
         let mut resulting_node = rolling_node_rc.borrow_mut();
         resulting_node
             .transitional_nodes
-            .sort_by(|a, b| a.priority.cmp(&b.priority));
+            .sort_by(|a, b| b.priority.cmp(&a.priority));
 
-        resulting_node.transitional_nodes.iter().for_each(|node| {
-            results.push(node.clone());
+        resulting_node.transitional_nodes.iter().for_each(|node_rc| {
+            if results.len() == max_results as usize {
+                return;
+            }
+            results.push(node_rc.clone());
         });
 
         results
