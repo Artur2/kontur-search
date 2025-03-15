@@ -2,6 +2,7 @@ use crate::trie::Trie;
 use clap::Parser;
 use std::fs;
 use std::io::stdin;
+use std::time::Instant;
 
 mod node;
 mod trie;
@@ -48,6 +49,8 @@ fn main() {
     }
 
     let mut trie = Trie::new();
+    let start_of_load = Instant::now();
+    let mut count_of_words = 0;
     fs::read_to_string(&args.words_source_path)
         .unwrap()
         .lines()
@@ -62,7 +65,7 @@ fn main() {
                 if !word_passed {
                     passing_word = trimmed.to_string();
                     word_passed = true;
-
+                    count_of_words += 1;
                     return;
                 }
 
@@ -74,6 +77,11 @@ fn main() {
 
             trie.add(&passing_word, passing_priority);
         });
+    let elapsed_of_load = start_of_load.elapsed();
+    if !args.quiet {
+        println!("Elapsed time of building trie: {:?}", elapsed_of_load);
+        println!("Count of words: {}", count_of_words);
+    }
 
     if args.interactive_search {
         println!("Interactive search is on");
@@ -82,7 +90,12 @@ fn main() {
             let mut input = String::new();
             stdin().read_line(&mut input).unwrap();
 
+            let start = Instant::now();
             let result = trie.search(&input.trim(), args.max_results_count);
+            let elapsed = start.elapsed();
+            if !args.quiet {
+                println!("Elapsed time: {:?}", elapsed);
+            }
 
             result
                 .iter()

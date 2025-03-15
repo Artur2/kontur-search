@@ -6,7 +6,7 @@ use std::{
 
 #[derive(Default)]
 pub struct Trie {
-    pub root: Rc<RefCell<Node>>,
+    root: Rc<RefCell<Node>>,
 }
 
 impl Trie {
