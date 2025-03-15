@@ -234,4 +234,13 @@ mod tests {
         let result = trie.search("deface", 1);
         assert_eq!(result.len(), 0);
     }
+
+    #[test]
+    pub fn search_correct_ignore_if_word_not_full_is_exist() {
+        let mut trie = Trie::new();
+        trie.add("passoublie", 1);
+
+        let result = trie.search("passout", 1);
+        assert_eq!(result.len(), 0);
+    }
 }
