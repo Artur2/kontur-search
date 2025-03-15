@@ -59,16 +59,23 @@ impl Trie {
     }
 
     pub fn search(&self, value: &str, max_results: i32) -> Vec<Rc<TransitionalNode>> {
+
         let mut results = Vec::new();
         let value_length: usize = value.len();
 
         let value_as_bytes = value.as_bytes();
         let root_node = self.root.borrow();
+
         let mut is_next_level = false;
         let mut rolling_node_rc = Rc::default();
+        let mut is_passed_whole_value = false;
 
         for i in 0..value_length {
             let symbol = value_as_bytes[i] as char;
+            if i == value_length - 1 {
+                is_passed_whole_value = true;
+            }
+
             if !is_next_level && root_node.nodes.contains_key(&symbol) {
                 rolling_node_rc = root_node.nodes[&symbol].clone();
                 is_next_level = true;
@@ -90,9 +97,14 @@ impl Trie {
                 if found_rolling_node {
                     rolling_node_rc = new_rolling_node_rc;
                 } else {
+                    is_passed_whole_value = false;
                     break;
                 }
             }
+        }
+
+        if is_passed_whole_value == false {
+            return results;
         }
 
         let mut resulting_node = rolling_node_rc.borrow_mut();
@@ -202,7 +214,7 @@ mod tests {
     #[test]
     pub fn not_find_value_with_empty() {
         let trie = Trie::new();
-        let result = trie.search("a", 1);
+        let result = trie.search("aaa", 1);
 
         assert_eq!(result.len(), 0);
     }
