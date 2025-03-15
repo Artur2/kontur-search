@@ -72,7 +72,7 @@ impl Trie {
 
         for i in 0..value_length {
             let symbol = value_as_bytes[i] as char;
-            if i == value_length - 1 {
+            if i == value_length - 1{
                 is_passed_whole_value = true;
             }
 
@@ -243,4 +243,29 @@ mod tests {
         let result = trie.search("passout", 1);
         assert_eq!(result.len(), 0);
     }
+
+    #[test]
+    pub fn search_should_not_overlap() {
+        let mut trie = Trie::new();
+        trie.add("lapse", 1);
+
+        let result = trie.search("lapsed", 3);
+        assert_eq!(0, result.len());
+    }
+
+    // TODO: Добится кейса, когда вводим
+    /* cityoff а получаем -
+    Value: cityofnews_small, Priority: 0
+    Value: cityofnews_large, Priority: 0
+    Value: cityofnews_thumb, Priority: 0
+    Value: cityofgod, Priority: 0
+    Value: cityofgodgang, Priority: 0
+    Value: cityofchicagosummerjobs, Priority: 0
+    Value: cityofhoustonjobposting, Priority: 0
+    Value: cityofbits, Priority: 0
+    Value: cityofbuchanan, Priority: 0
+    Value: cityofheroes_en, Priority: 0
+    Value: cityofwarts_full, Priority: 0
+
+     */
 }
