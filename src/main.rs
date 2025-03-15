@@ -8,6 +8,8 @@ fn main() {
     trie.add("Test", 10);
     trie.add("Test2", 20);
     trie.add("Test3", 30);
+    trie.add("TT", 5);
+    trie.add("Testt", 22);
 
     let values = trie.search("Test", 10);
 
