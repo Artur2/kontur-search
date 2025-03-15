@@ -189,4 +189,43 @@ mod tests {
         assert_eq!(result[1].priority, 2);
         assert_eq!(result[2].priority, 1);
     }
+
+    #[test]
+    pub fn find_different_values() {
+        let mut trie = Trie::new();
+        trie.add("a", 1);
+        trie.add("b", 1);
+
+        let first_result = trie.search("a", 1);
+        let second_result = trie.search("b", 1);
+
+        assert_eq!(first_result.len(), 1);
+        assert_eq!(second_result.len(), 1);
+        assert_eq!(first_result[0].priority, 1);
+        assert_eq!(second_result[0].priority, 1);
+    }
+
+    #[test]
+    pub fn not_find_value_with_empty() {
+        let trie = Trie::new();
+        let result = trie.search("a", 1);
+
+        assert_eq!(result.len(), 0);
+    }
+
+    #[test]
+    pub fn not_find_value_with_seeded_trie() {
+        let mut trie = Trie::new();
+        trie.add("dead beef", 1);
+        let result = trie.search("dead beef1", 1);
+        assert_eq!(result.len(), 0);
+    }
+
+    #[test]
+    pub fn not_find_different_value_with_seeded_trie() {
+        let mut trie = Trie::new();
+        trie.add("dead beef", 1);
+        let result = trie.search("deface", 1);
+        assert_eq!(result.len(), 0);
+    }
 }
