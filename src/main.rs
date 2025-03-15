@@ -57,15 +57,17 @@ fn main() {
             let mut passing_word = String::new();
             let mut passing_priority = 0;
             line.split(" ").for_each(|word| {
+                let trimmed = word.trim();
+
                 if !word_passed {
-                    passing_word = word.to_string();
+                    passing_word = trimmed.to_string();
                     word_passed = true;
 
                     return;
                 }
 
                 if !priority_passed {
-                    passing_priority = word.parse::<i64>().unwrap_or(0);
+                    passing_priority = trimmed.parse::<i64>().unwrap_or(0);
                     priority_passed = true;
                 }
             });
@@ -80,7 +82,7 @@ fn main() {
             let mut input = String::new();
             stdin().read_line(&mut input).unwrap();
 
-            let result = trie.search(&input, args.max_results_count);
+            let result = trie.search(&input.trim(), args.max_results_count);
 
             result
                 .iter()
@@ -107,7 +109,8 @@ fn main() {
                 println!("Search term: {}", line);
             }
 
-            let result = trie.search(&line, args.max_results_count);
+            let trimmed = line.trim();
+            let result = trie.search(&trimmed, args.max_results_count);
 
             if results_to_terminal {
                 result
