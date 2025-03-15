@@ -152,3 +152,41 @@ impl Trie {
         }
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    pub fn after_add_is_available() {
+        let mut trie = Trie::new();
+        trie.add("a", 1);
+        let result = trie.search("a", 1);
+        assert_eq!(result.len(), 1);
+    }
+
+    #[test]
+    pub fn respect_count_of_search() {
+        let mut trie = Trie::new();
+        trie.add("aaa", 1);
+        trie.add("aa", 2);
+        trie.add("c", 3);
+        let result = trie.search("aa", 2);
+        assert_eq!(result.len(), 2);
+    }
+
+    #[test]
+    pub fn respect_priority_with_max_results() {
+        let mut trie = Trie::new();
+        trie.add("aaa", 1);
+        trie.add("aa3", 2);
+        trie.add("aahhh", 3);
+
+        let result = trie.search("aa", 3);
+
+        assert_eq!(result[0].priority, 3);
+        assert_eq!(result[1].priority, 2);
+        assert_eq!(result[2].priority, 1);
+    }
+}
