@@ -21,10 +21,6 @@ impl Node {
 
         default
     }
-
-    pub fn is_default(&self) -> bool {
-        self.key == char::default()
-    }
 }
 
 impl TransitionalNode {

@@ -1,10 +1,7 @@
 use crate::trie::Trie;
-use std::fmt::Debug;
 
 mod node;
 mod trie;
-
-#[allow(unused_imports, dead_code)]
 
 fn main() {
     let mut trie = Trie::new();
