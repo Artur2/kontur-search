@@ -64,18 +64,70 @@ impl Trie {
         node: &mut RefMut<Node>,
     ) -> Rc<RefCell<Node>> {
         if !node.nodes.contains_key(symbol) {
-            let new_node_rc =
-                Trie::create_node_with_transition(&symbol, transitional_node);
+            let new_node_rc = Trie::create_node_with_transition(&symbol, transitional_node);
             let cloned_rc_from_new_node_rc = Rc::clone(&new_node_rc);
             node.nodes.insert(symbol.clone(), new_node_rc);
             cloned_rc_from_new_node_rc
         } else {
-            Rc::clone(&node.nodes[&symbol])
+            let mut existing_rc = Rc::clone(&node.nodes[symbol]);
+            let clone_of_existing_rc = existing_rc.clone();
+            let mut borrowed_rc = existing_rc.borrow_mut();
+
+            borrowed_rc
+                .transitional_nodes
+                .push(transitional_node.clone());
+            clone_of_existing_rc
         }
     }
 
-    pub fn search(value: &str, max_results: i32) -> Vec<Rc<TransitionalNode>> {
-        todo!("Сделать после Add");
+    pub fn search(&self, value: &str, max_results: i32) -> Vec<Rc<TransitionalNode>> {
+        let mut results = Vec::new();
+        let value_length: usize = value.len();
+
+        let value_as_bytes = value.as_bytes();
+        let mut root_node = self.root.borrow();
+        let mut is_next_level = false;
+        let mut rolling_node_rc = Rc::default();
+
+        for i in 0..value_length {
+            let symbol = value_as_bytes[i] as char;
+            if !is_next_level && root_node.nodes.contains_key(&symbol) {
+                rolling_node_rc = root_node.nodes[&symbol].clone();
+                is_next_level = true;
+            } else {
+                let mut new_rolling_node_rc = Rc::default();
+                let mut found_rolling_node = false;
+                match rolling_node_rc.try_borrow_mut() {
+                    Ok(mut inner_node_mut) => {
+                        if inner_node_mut.nodes.contains_key(&symbol) {
+                            new_rolling_node_rc = inner_node_mut.nodes[&symbol].clone();
+                            found_rolling_node = true;
+                        }
+                    }
+                    Err(_) => {
+                        panic!("Cannot borrow value?");
+                    }
+                }
+
+                if found_rolling_node {
+                    rolling_node_rc = new_rolling_node_rc;
+                } else {
+                    println!("Not found value");
+                    break;
+                }
+            }
+        }
+
+        let mut resulting_node = rolling_node_rc.borrow_mut();
+        resulting_node
+            .transitional_nodes
+            .sort_by(|a, b| a.priority.cmp(&b.priority));
+
+        resulting_node.transitional_nodes.iter().for_each(|node| {
+            results.push(node.clone());
+        });
+
+        results
     }
 
     fn create_node_with_transition(
