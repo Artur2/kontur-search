@@ -1,8 +1,6 @@
 use crate::trie::Trie;
 use clap::Parser;
-use std::fs;
-use std::io::stdin;
-use std::time::Instant;
+use std::{fs, io::stdin, time::Instant};
 
 mod node;
 mod trie;
