@@ -1,6 +1,7 @@
 use crate::trie::Trie;
 use clap::Parser;
-use std::{fs, io::stdin, time::Instant};
+use std::fs::File;
+use std::{fs, io::stdin, io::BufRead, io::BufReader, time::Instant};
 
 mod node;
 mod trie;
@@ -49,32 +50,36 @@ fn main() {
     let mut trie = Trie::new();
     let start_of_load = Instant::now();
     let mut count_of_words = 0;
-    fs::read_to_string(&args.words_source_path)
-        .unwrap()
-        .lines()
-        .for_each(|line| {
-            let mut word_passed = false;
-            let mut priority_passed = false;
-            let mut passing_word = String::new();
-            let mut passing_priority = 0;
-            line.split(" ").for_each(|word| {
-                let trimmed = word.trim();
+    let file = File::open(&args.words_source_path);
 
-                if !word_passed {
-                    passing_word = trimmed.to_string();
-                    word_passed = true;
-                    count_of_words += 1;
-                    return;
-                }
+    if file.is_err() {
+        println!("Failed to open words source file");
+    }
 
-                if !priority_passed {
-                    passing_priority = trimmed.parse::<i64>().unwrap_or(0);
-                    priority_passed = true;
-                }
-            });
+    let word_source_reader = BufReader::new(file.unwrap());
+    word_source_reader.lines().for_each(|line| {
+        let mut word_passed = false;
+        let mut priority_passed = false;
+        let mut passing_word = String::new();
+        let mut passing_priority = 0;
+        line.unwrap().split(" ").for_each(|word| {
+            let trimmed = word.trim();
 
-            trie.add(&passing_word, passing_priority);
+            if !word_passed {
+                passing_word = trimmed.to_string();
+                word_passed = true;
+                count_of_words += 1;
+                return;
+            }
+
+            if !priority_passed {
+                passing_priority = trimmed.parse::<i64>().unwrap_or(0);
+                priority_passed = true;
+            }
         });
+
+        trie.add(&passing_word, passing_priority);
+    });
     let elapsed_of_load = start_of_load.elapsed();
     if !args.quiet {
         println!("Elapsed time of building trie: {:?}", elapsed_of_load);
@@ -112,29 +117,38 @@ fn main() {
 
     let results_to_terminal = args.results_file.is_none();
     let mut results_vector = vec![];
-    fs::read_to_string(&args.words_source_path)
-        .unwrap()
-        .lines()
-        .for_each(|line| {
-            if !args.quiet {
-                println!("Search term: {}", line);
-            }
+    let file = File::open(&args.words_source_path);
+    if file.is_err() {
+        println!("Failed to open words source file");
+    }
 
-            let trimmed = line.trim();
-            let result = trie.search(&trimmed, args.max_results_count);
+    let reader = BufReader::new(file.unwrap());
+    reader.lines().for_each(|line| {
+        let line = line.unwrap();
+        if !args.quiet {
+            println!("Search term: {}", line);
+        }
 
-            if results_to_terminal {
-                result
-                    .iter()
-                    .for_each(|r| println!("Value: {}, Priority: {}", r.full_value, r.priority));
-            } else {
-                result.iter().for_each(|r| {
-                    results_vector.push(r.full_value.clone());
-                })
-            }
-        });
+        let trimmed = line.trim();
+        let start_of_load = Instant::now();
+        let result = trie.search(&trimmed, args.max_results_count);
+        let elapsed = start_of_load.elapsed();
+        if !args.quiet {
+            println!("Elapsed time of search: {:?}, term {}", elapsed, &trimmed);
+        }
 
-    if !results_to_terminal {
+        if results_to_terminal {
+            result
+                .iter()
+                .for_each(|r| println!("Value: {}, Priority: {}", r.full_value, r.priority));
+        } else {
+            result.iter().for_each(|r| {
+                results_vector.push(r.full_value.clone());
+            })
+        }
+    });
+
+    if !results_to_terminal && args.results_file.is_some() {
         if let Ok(_) = fs::write(
             &args.results_file.unwrap(),
             results_vector.join("\n").as_bytes(),
