@@ -51,11 +51,6 @@ fn main() {
     let start_of_load = Instant::now();
     let mut count_of_words = 0;
     let file = File::open(&args.words_source_path);
-
-    if file.is_err() {
-        println!("Failed to open words source file");
-    }
-
     let word_source_reader = BufReader::new(file.unwrap());
     word_source_reader.lines().for_each(|line| {
         let mut word_passed = false;
