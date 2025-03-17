@@ -125,9 +125,9 @@ fn main() {
         }
 
         let trimmed = line.trim();
-        let start_of_load = Instant::now();
+        let start_of_search = Instant::now();
         let result = trie.search(&trimmed, args.max_results_count);
-        let elapsed = start_of_load.elapsed();
+        let elapsed = start_of_search.elapsed();
         if !args.quiet {
             println!("Elapsed time of search: {:?}, term {}", elapsed, &trimmed);
         }
