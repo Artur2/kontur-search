@@ -1,7 +1,7 @@
 use crate::trie::Trie;
 use clap::Parser;
 use std::fs::File;
-use std::{fs, io::stdin, io::BufRead, io::BufReader, time::Instant};
+use std::{fs, io::BufRead, io::BufReader, io::stdin, time::Instant};
 
 mod node;
 mod trie;
@@ -35,7 +35,7 @@ pub struct Cli {
 }
 
 fn main() {
-    let args = Cli::parse();
+    let mut args = Cli::parse();
 
     if args.words_source_path.is_empty() {
         println!("Words source path is empty");
@@ -55,7 +55,7 @@ fn main() {
     word_source_reader.lines().for_each(|line| {
         let mut word_passed = false;
         let mut priority_passed = false;
-        let mut passing_word = String::new();
+        let mut passing_word = String::default();
         let mut passing_priority = 0;
         line.unwrap().split(" ").for_each(|word| {
             let trimmed = word.trim();
@@ -95,9 +95,13 @@ fn main() {
                 println!("Elapsed time: {:?}", elapsed);
             }
 
-            result
-                .iter()
-                .for_each(|r| println!("Value: {}, Priority: {}", r.full_value, r.priority));
+            result.iter().for_each(|r| {
+                let borrowed = r.borrow();
+                println!(
+                    "Value: {}, Priority: {}",
+                    borrowed.transitional_node.full_value, borrowed.transitional_node.priority
+                )
+            });
         }
     }
 
@@ -133,12 +137,17 @@ fn main() {
         }
 
         if results_to_terminal {
-            result
-                .iter()
-                .for_each(|r| println!("Value: {}, Priority: {}", r.full_value, r.priority));
+            result.iter().for_each(|r| {
+                let borrowed = r.borrow();
+                println!(
+                    "Value: {}, Priority: {}",
+                    borrowed.transitional_node.full_value, borrowed.transitional_node.priority
+                )
+            });
         } else {
             result.iter().for_each(|r| {
-                results_vector.push(r.full_value.clone());
+                let borrowed = r.borrow();
+                results_vector.push(borrowed.transitional_node.full_value.clone());
             })
         }
     });

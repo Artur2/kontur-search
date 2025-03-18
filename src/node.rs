@@ -6,7 +6,7 @@ pub struct Node {
     pub key: char,
     pub parent: Option<Rc<RefCell<Node>>>,
     pub nodes: HashMap<char, Rc<RefCell<Node>>>,
-    pub transitional_nodes: Vec<Rc<TransitionalNode>>
+    pub transitional_node: TransitionalNode
 }
 
 #[derive(Default)]
@@ -38,7 +38,7 @@ impl Default for Node {
         Node {
             key: char::default(),
             nodes: HashMap::new(),
-            transitional_nodes: Vec::new(),
+            transitional_node: TransitionalNode::default(),
             parent: None
         }
     }

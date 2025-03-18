@@ -20,7 +20,6 @@ impl Trie {
         let length: usize = value.len();
         let value_as_bytes = value.as_bytes();
         let transitional_node = TransitionalNode::new(priority, String::from(value));
-        let transitional_node_rc = Rc::from(transitional_node);
 
         let root_rc: Rc<RefCell<Node>> = Rc::clone(&self.root);
         let mut root_node_mut = self.root.borrow_mut();
@@ -34,7 +33,6 @@ impl Trie {
                 // Ничего не задано с рута
                 rolling_node_rc = Trie::create_or_rollout_another_symbol(
                     &symbol,
-                    &transitional_node_rc,
                     &mut root_node_mut,
                     root_rc.clone(),
                 );
@@ -46,7 +44,6 @@ impl Trie {
                     Ok(mut inner_node_mut) => {
                         new_rolling_node_rc = Trie::create_or_rollout_another_symbol(
                             &symbol,
-                            &transitional_node_rc,
                             &mut inner_node_mut,
                             rolling_node_rc.clone(),
                         );
@@ -59,9 +56,12 @@ impl Trie {
                 rolling_node_rc = new_rolling_node_rc;
             }
         }
+
+        let mut rolled_node = rolling_node_rc.borrow_mut();
+        rolled_node.transitional_node = transitional_node;
     }
 
-    pub fn search(&self, value: &str, max_results: i32) -> Vec<Rc<TransitionalNode>> {
+    pub fn search(&self, value: &str, max_results: i32) -> Vec<Rc<RefCell<Node>>> {
         let mut results = Vec::new();
         let value_length: usize = value.len();
 
@@ -112,19 +112,16 @@ impl Trie {
         let mut nodes_without_childs = Trie::find_nodes_without_childs(Rc::clone(&rolling_node_rc));
 
         nodes_without_childs.sort_by(|a, b| {
-            let b_transitional_node = b.borrow().transitional_nodes[0].clone();
-            let a_transitional_node = a.borrow().transitional_nodes[0].clone();
+            let b_borrowed = b.borrow();
+            let a_borrowed = a.borrow();
 
-            return b_transitional_node
+            return b_borrowed
+                .transitional_node
                 .priority
-                .cmp(&a_transitional_node.priority);
+                .cmp(&a_borrowed.transitional_node.priority);
         });
 
         nodes_without_childs
-            .iter()
-            .map(|v| v.borrow().transitional_nodes[0].clone())
-            .take(max_results as usize)
-            .collect()
     }
 
     fn find_nodes_without_childs(node: Rc<RefCell<Node>>) -> Vec<Rc<RefCell<Node>>> {
@@ -149,13 +146,8 @@ impl Trie {
         nodes_without_childs
     }
 
-    fn create_node_with_transition(
-        char: &char,
-        transitional_node: &Rc<TransitionalNode>,
-        parent: Rc<RefCell<Node>>,
-    ) -> Rc<RefCell<Node>> {
+    fn create_node_with_transition(char: &char, parent: Rc<RefCell<Node>>) -> Rc<RefCell<Node>> {
         let mut node = Node::new(char.clone());
-        node.transitional_nodes.push(transitional_node.clone());
         node.parent = Some(parent);
         let new_node_cell = RefCell::new(node); // mutable mem location
         let new_node_rc = Rc::from(new_node_cell); // reference to location
@@ -164,24 +156,17 @@ impl Trie {
 
     fn create_or_rollout_another_symbol(
         symbol: &char,
-        transitional_node: &Rc<TransitionalNode>,
         node: &mut RefMut<Node>,
         parent: Rc<RefCell<Node>>,
     ) -> Rc<RefCell<Node>> {
         if !node.nodes.contains_key(symbol) {
-            let new_node_rc = Trie::create_node_with_transition(&symbol, transitional_node, parent);
+            let new_node_rc = Trie::create_node_with_transition(&symbol, parent);
             let cloned_rc_from_new_node_rc = Rc::clone(&new_node_rc);
             node.nodes.insert(symbol.clone(), new_node_rc);
             cloned_rc_from_new_node_rc
         } else {
             let existing_rc = Rc::clone(&node.nodes[symbol]);
-            let mut existing_node = existing_rc.borrow_mut();
-
-            existing_node
-                .transitional_nodes
-                .push(transitional_node.clone());
-
-            existing_rc.clone()
+            existing_rc
         }
     }
 }
@@ -218,9 +203,9 @@ mod tests {
 
         let result = trie.search("aa", 3);
 
-        assert_eq!(result[0].priority, 3);
-        assert_eq!(result[1].priority, 2);
-        assert_eq!(result[2].priority, 1);
+        assert_eq!(result[0].borrow().transitional_node.priority, 3);
+        assert_eq!(result[1].borrow().transitional_node.priority, 2);
+        assert_eq!(result[2].borrow().transitional_node.priority, 1);
     }
 
     #[test]
@@ -234,8 +219,8 @@ mod tests {
 
         assert_eq!(first_result.len(), 1);
         assert_eq!(second_result.len(), 1);
-        assert_eq!(first_result[0].priority, 1);
-        assert_eq!(second_result[0].priority, 1);
+        assert_eq!(first_result[0].borrow().transitional_node.priority, 1);
+        assert_eq!(second_result[0].borrow().transitional_node.priority, 1);
     }
 
     #[test]
