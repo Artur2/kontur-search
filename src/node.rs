@@ -4,6 +4,7 @@ use std::rc::Rc;
 
 pub struct Node {
     pub key: char,
+    pub parent: Option<Rc<RefCell<Node>>>,
     pub nodes: HashMap<char, Rc<RefCell<Node>>>,
     pub transitional_nodes: Vec<Rc<TransitionalNode>>
 }
@@ -38,6 +39,7 @@ impl Default for Node {
             key: char::default(),
             nodes: HashMap::new(),
             transitional_nodes: Vec::new(),
+            parent: None
         }
     }
 }
