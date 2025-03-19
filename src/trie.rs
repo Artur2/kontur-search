@@ -27,7 +27,7 @@ impl Trie {
         let mut is_next_level = false;
 
         for i in 0..length {
-            let symbol = value_as_bytes[i] as char;
+            let symbol = value_as_bytes[i];
 
             if !is_next_level {
                 // Ничего не задано с рута
@@ -73,7 +73,7 @@ impl Trie {
         let mut is_passed_whole_value = false;
 
         for i in 0..value_length {
-            let symbol = value_as_bytes[i] as char;
+            let symbol = value_as_bytes[i];
             if i == value_length - 1 {
                 is_passed_whole_value = true;
             }
@@ -121,7 +121,17 @@ impl Trie {
                 .cmp(&a_borrowed.transitional_node.priority);
         });
 
-        nodes_without_childs
+        let mut count = 0;
+        nodes_without_childs.iter().for_each(|node| {
+            if count == max_results {
+                return;
+            }
+
+            count += 1;
+            results.push(Rc::clone(node));
+        });
+
+        results
     }
 
     fn find_nodes_without_childs(node: Rc<RefCell<Node>>) -> Vec<Rc<RefCell<Node>>> {
@@ -146,7 +156,7 @@ impl Trie {
         nodes_without_childs
     }
 
-    fn create_node_with_transition(char: &char, parent: Rc<RefCell<Node>>) -> Rc<RefCell<Node>> {
+    fn create_node_with_transition(char: &u8, parent: Rc<RefCell<Node>>) -> Rc<RefCell<Node>> {
         let mut node = Node::new(char.clone());
         node.parent = Some(parent);
         let new_node_cell = RefCell::new(node); // mutable mem location
@@ -155,12 +165,12 @@ impl Trie {
     }
 
     fn create_or_rollout_another_symbol(
-        symbol: &char,
+        symbol: &u8,
         node: &mut RefMut<Node>,
         parent: Rc<RefCell<Node>>,
     ) -> Rc<RefCell<Node>> {
         if !node.nodes.contains_key(symbol) {
-            let new_node_rc = Trie::create_node_with_transition(&symbol, parent);
+            let new_node_rc = Trie::create_node_with_transition(symbol, parent);
             let cloned_rc_from_new_node_rc = Rc::clone(&new_node_rc);
             node.nodes.insert(symbol.clone(), new_node_rc);
             cloned_rc_from_new_node_rc
