@@ -99,7 +99,7 @@ fn main() {
                 let borrowed = r.borrow();
                 println!(
                     "Value: {}, Priority: {}",
-                    borrowed.transitional_node.full_value, borrowed.transitional_node.priority
+                    borrowed.transitional_node.full_value_as_string(), borrowed.transitional_node.priority
                 )
             });
         }
@@ -141,13 +141,13 @@ fn main() {
                 let borrowed = r.borrow();
                 println!(
                     "Value: {}, Priority: {}",
-                    borrowed.transitional_node.full_value, borrowed.transitional_node.priority
+                    borrowed.transitional_node.full_value_as_string(), borrowed.transitional_node.priority
                 )
             });
         } else {
             result.iter().for_each(|r| {
                 let borrowed = r.borrow();
-                results_vector.push(borrowed.transitional_node.full_value.clone());
+                results_vector.push(borrowed.transitional_node.full_value_as_string());
             })
         }
     });
