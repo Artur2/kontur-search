@@ -1,4 +1,6 @@
 use crate::node::*;
+use std::cell::BorrowMutError;
+use std::rc::Weak;
 use std::{
     cell::{RefCell, RefMut},
     rc::Rc,
@@ -22,7 +24,7 @@ impl Trie {
         let transitional_node = TransitionalNode::new(priority, &value);
 
         let mut root_node_mut = self.root.borrow_mut();
-        let mut rolling_node_rc = Rc::default();
+        let mut rolling_node_rc = Weak::default();
         let mut is_next_level = false;
 
         for i in 0..length {
@@ -30,32 +32,42 @@ impl Trie {
 
             if !is_next_level {
                 // Ничего не задано с рута
-                rolling_node_rc = Trie::create_or_rollout_another_symbol(
-                    &symbol,
-                    &mut root_node_mut,
-                );
+                rolling_node_rc =
+                    Trie::create_or_rollout_another_symbol(&symbol, &mut root_node_mut);
                 is_next_level = true;
             } else {
                 // Уже находимся в на уровне ниже рута
-                let new_rolling_node_rc;
-                match rolling_node_rc.try_borrow_mut() {
-                    Ok(mut inner_node_mut) => {
-                        new_rolling_node_rc = Trie::create_or_rollout_another_symbol(
-                            &symbol,
-                            &mut inner_node_mut,
-                        );
-                    }
-                    Err(_) => {
-                        panic!("Какого хрена мы не можем заимствовать")
+                let mut new_rolling_node_rc = Weak::default();
+                match rolling_node_rc.upgrade() {
+                    Some(v) => match v.try_borrow_mut() {
+                        Ok(mut inner_node_mut) => {
+                            new_rolling_node_rc = Trie::create_or_rollout_another_symbol(
+                                &symbol,
+                                &mut inner_node_mut,
+                            );
+                        }
+                        Err(_) => {}
+                    },
+                    None => {
+                        panic!("Trie::add: rolling_node_rc is None");
                     }
                 }
 
-                rolling_node_rc = new_rolling_node_rc;
+                rolling_node_rc = Weak::clone(&new_rolling_node_rc);
             }
         }
 
-        let mut rolled_node = rolling_node_rc.borrow_mut();
-        rolled_node.transitional_node = transitional_node;
+        match rolling_node_rc.upgrade() {
+            Some(mut value) => match value.try_borrow_mut() {
+                Ok(mut rolled_node) => {
+                    rolled_node.transitional_node = transitional_node;
+                }
+                Err(_) => {}
+            },
+            None => {
+                panic!("Trie::add2: rolling_node_rc is None");
+            }
+        }
     }
 
     pub fn search(&self, value: &str, max_results: i32) -> Vec<Rc<RefCell<Node>>> {
@@ -163,14 +175,14 @@ impl Trie {
     fn create_or_rollout_another_symbol(
         symbol: &u8,
         node: &mut RefMut<Node>,
-    ) -> Rc<RefCell<Node>> {
+    ) -> Weak<RefCell<Node>> {
         if !node.nodes.contains_key(symbol) {
             let new_node_rc = Trie::create_node_with_transition(symbol);
-            let cloned_rc_from_new_node_rc = Rc::clone(&new_node_rc);
+            let cloned_rc_from_new_node_rc = Rc::downgrade(&new_node_rc);
             node.nodes.insert(symbol.clone(), new_node_rc);
             cloned_rc_from_new_node_rc
         } else {
-            let existing_rc = Rc::clone(&node.nodes[symbol]);
+            let existing_rc = Rc::downgrade(&node.nodes[symbol]);
             existing_rc
         }
     }
