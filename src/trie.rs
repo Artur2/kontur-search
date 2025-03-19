@@ -166,7 +166,6 @@ impl Trie {
     fn create_or_rollout_another_symbol(
         symbol: &u8,
         node: &mut RefMut<Node>,
-        parent: Rc<RefCell<Node>>,
     ) -> Rc<RefCell<Node>> {
         if !node.nodes.contains_key(symbol) {
             let new_node_rc = Trie::create_node_with_transition(symbol);
