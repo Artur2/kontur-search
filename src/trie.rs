@@ -21,7 +21,6 @@ impl Trie {
         let value_as_bytes = value.as_bytes();
         let transitional_node = TransitionalNode::new(priority, &value);
 
-        let root_rc: Rc<RefCell<Node>> = Rc::clone(&self.root);
         let mut root_node_mut = self.root.borrow_mut();
         let mut rolling_node_rc = Rc::default();
         let mut is_next_level = false;
@@ -34,7 +33,6 @@ impl Trie {
                 rolling_node_rc = Trie::create_or_rollout_another_symbol(
                     &symbol,
                     &mut root_node_mut,
-                    root_rc.clone(),
                 );
                 is_next_level = true;
             } else {
@@ -45,7 +43,6 @@ impl Trie {
                         new_rolling_node_rc = Trie::create_or_rollout_another_symbol(
                             &symbol,
                             &mut inner_node_mut,
-                            rolling_node_rc.clone(),
                         );
                     }
                     Err(_) => {
