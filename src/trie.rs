@@ -209,9 +209,13 @@ mod tests {
 
         let result = trie.search("aa", 3);
 
-        assert_eq!(result[0].borrow().transitional_node.unwrap().priority, 3);
-        assert_eq!(result[1].borrow().transitional_node.unwrap().priority, 2);
-        assert_eq!(result[2].borrow().transitional_node.unwrap().priority, 1);
+        let borrowed_0 = result[0].borrow();
+        let borrowed_1 = result[1].borrow();
+        let borrowed_2 = result[2].borrow();
+
+        assert_eq!(borrowed_0.transitional_node.as_ref().unwrap().priority, 3);
+        assert_eq!(borrowed_1.transitional_node.as_ref().unwrap().priority, 2);
+        assert_eq!(borrowed_2.transitional_node.as_ref().unwrap().priority, 1);
     }
 
     #[test]
@@ -223,10 +227,13 @@ mod tests {
         let first_result = trie.search("a", 1);
         let second_result = trie.search("b", 1);
 
+        let borrowed_0 = first_result[0].borrow();
+        let borrowed_1 = second_result[0].borrow();
+
         assert_eq!(first_result.len(), 1);
         assert_eq!(second_result.len(), 1);
-        assert_eq!(first_result[0].borrow().transitional_node.unwrap().priority, 1);
-        assert_eq!(second_result[0].borrow().transitional_node.unwrap().priority, 1);
+        assert_eq!(borrowed_0.transitional_node.as_ref().unwrap().priority, 1);
+        assert_eq!(borrowed_1.transitional_node.as_ref().unwrap().priority, 1);
     }
 
     #[test]
