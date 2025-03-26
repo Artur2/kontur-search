@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 pub struct Node {
     pub nodes: Box<HashMap<u8, Rc<RefCell<Node>>>>,
-    pub transitional_node: TransitionalNode
+    pub transitional_node: Option<TransitionalNode>
 }
 
 #[derive(Default)]
@@ -43,7 +43,7 @@ impl Default for Node {
     fn default() -> Self {
         Node {
             nodes: Box::new(HashMap::new()),
-            transitional_node: TransitionalNode::default()
+            transitional_node: None
         }
     }
 }

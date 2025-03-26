@@ -97,9 +97,10 @@ fn main() {
 
             result.iter().for_each(|r| {
                 let borrowed = r.borrow();
+                let transitional_node = borrowed.transitional_node.as_ref().unwrap();
                 println!(
                     "Value: {}, Priority: {}",
-                    borrowed.transitional_node.full_value_as_string(), borrowed.transitional_node.priority
+                    transitional_node.full_value_as_string(), transitional_node.priority
                 )
             });
         }
@@ -139,15 +140,17 @@ fn main() {
         if results_to_terminal {
             result.iter().for_each(|r| {
                 let borrowed = r.borrow();
+                let transitional_node = borrowed.transitional_node.as_ref().unwrap();
                 println!(
                     "Value: {}, Priority: {}",
-                    borrowed.transitional_node.full_value_as_string(), borrowed.transitional_node.priority
+                    transitional_node.full_value_as_string(), transitional_node.priority
                 )
             });
         } else {
             result.iter().for_each(|r| {
                 let borrowed = r.borrow();
-                results_vector.push(borrowed.transitional_node.full_value_as_string());
+                let transitional_node = borrowed.transitional_node.as_ref().unwrap();
+                results_vector.push(transitional_node.full_value_as_string());
             })
         }
     });

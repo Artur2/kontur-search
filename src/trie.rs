@@ -55,7 +55,7 @@ impl Trie {
         }
 
         let mut rolled_node = rolling_node_rc.borrow_mut();
-        rolled_node.transitional_node = transitional_node;
+        rolled_node.transitional_node = Some(transitional_node);
     }
 
     pub fn search(&self, value: &str, max_results: i32) -> Vec<Rc<RefCell<Node>>> {
@@ -112,10 +112,11 @@ impl Trie {
             let b_borrowed = b.borrow();
             let a_borrowed = a.borrow();
 
-            return b_borrowed
-                .transitional_node
+            let b_transitional_node = b_borrowed.transitional_node.as_ref().unwrap();
+            let a_transitional_node = a_borrowed.transitional_node.as_ref().unwrap();
+            return b_transitional_node
                 .priority
-                .cmp(&a_borrowed.transitional_node.priority);
+                .cmp(&a_transitional_node.priority);
         });
 
         let mut count = 0;
@@ -208,9 +209,9 @@ mod tests {
 
         let result = trie.search("aa", 3);
 
-        assert_eq!(result[0].borrow().transitional_node.priority, 3);
-        assert_eq!(result[1].borrow().transitional_node.priority, 2);
-        assert_eq!(result[2].borrow().transitional_node.priority, 1);
+        assert_eq!(result[0].borrow().transitional_node.unwrap().priority, 3);
+        assert_eq!(result[1].borrow().transitional_node.unwrap().priority, 2);
+        assert_eq!(result[2].borrow().transitional_node.unwrap().priority, 1);
     }
 
     #[test]
@@ -224,8 +225,8 @@ mod tests {
 
         assert_eq!(first_result.len(), 1);
         assert_eq!(second_result.len(), 1);
-        assert_eq!(first_result[0].borrow().transitional_node.priority, 1);
-        assert_eq!(second_result[0].borrow().transitional_node.priority, 1);
+        assert_eq!(first_result[0].borrow().transitional_node.unwrap().priority, 1);
+        assert_eq!(second_result[0].borrow().transitional_node.unwrap().priority, 1);
     }
 
     #[test]
