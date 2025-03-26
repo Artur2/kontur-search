@@ -3,8 +3,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 pub struct Node {
-    pub key: u8,
-    pub nodes: HashMap<u8, Rc<RefCell<Node>>>,
+    pub nodes: Box<HashMap<u8, Rc<RefCell<Node>>>>,
     pub transitional_node: TransitionalNode
 }
 
@@ -15,9 +14,8 @@ pub struct TransitionalNode {
 }
 
 impl Node {
-    pub fn new(key: u8) -> Node {
+    pub fn new() -> Node {
         let mut default = Node::default();
-        default.key = key;
         default
     }
 }
@@ -44,8 +42,7 @@ impl TransitionalNode {
 impl Default for Node {
     fn default() -> Self {
         Node {
-            key: u8::default(),
-            nodes: HashMap::new(),
+            nodes: Box::new(HashMap::new()),
             transitional_node: TransitionalNode::default()
         }
     }
