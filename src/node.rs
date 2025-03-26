@@ -1,9 +1,9 @@
+use fxhash::FxHashMap;
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::rc::Rc;
 
 pub struct Node {
-    pub nodes: Box<HashMap<u8, Rc<RefCell<Node>>>>,
+    pub nodes: Box<FxHashMap<u8, Rc<RefCell<Node>>>>,
     pub transitional_node: Option<TransitionalNode>
 }
 
@@ -42,7 +42,7 @@ impl TransitionalNode {
 impl Default for Node {
     fn default() -> Self {
         Node {
-            nodes: Box::new(HashMap::new()),
+            nodes: Box::new(FxHashMap::default()),
             transitional_node: None
         }
     }
