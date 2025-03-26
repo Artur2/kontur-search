@@ -1,5 +1,4 @@
 use crate::node::*;
-use std::cell::BorrowMutError;
 use std::rc::Weak;
 use std::{
     cell::{RefCell, RefMut},
@@ -53,12 +52,12 @@ impl Trie {
                     }
                 }
 
-                rolling_node_rc = Weak::clone(&new_rolling_node_rc);
+                rolling_node_rc = new_rolling_node_rc;
             }
         }
 
         match rolling_node_rc.upgrade() {
-            Some(mut value) => match value.try_borrow_mut() {
+            Some(value) => match value.try_borrow_mut() {
                 Ok(mut rolled_node) => {
                     rolled_node.transitional_node = transitional_node;
                 }

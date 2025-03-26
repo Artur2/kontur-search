@@ -2,9 +2,11 @@ use crate::trie::Trie;
 use clap::Parser;
 use std::fs::File;
 use std::{fs, io::BufRead, io::BufReader, io::stdin, time::Instant};
+use crate::strie::STrie;
 
 mod node;
 mod trie;
+mod strie;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -36,6 +38,8 @@ pub struct Cli {
 
 fn main() {
     let mut args = Cli::parse();
+    args.interactive_search = true;
+    args.words_source_path = "combined_words.txt".to_string();
 
     if args.words_source_path.is_empty() {
         println!("Words source path is empty");
@@ -47,7 +51,7 @@ fn main() {
         return;
     }
 
-    let mut trie = Trie::new();
+    let mut trie = STrie::new();
     let start_of_load = Instant::now();
     let mut count_of_words = 0;
     let file = File::open(&args.words_source_path);
@@ -73,7 +77,7 @@ fn main() {
             }
         });
 
-        trie.add(&passing_word, passing_priority);
+        trie.add(&passing_word);
     });
     let elapsed_of_load = start_of_load.elapsed();
     if !args.quiet {
@@ -89,17 +93,16 @@ fn main() {
             stdin().read_line(&mut input).unwrap();
 
             let start = Instant::now();
-            let result = trie.search(&input.trim(), args.max_results_count);
+            let result = trie.search(&input.trim());
             let elapsed = start.elapsed();
             if !args.quiet {
                 println!("Elapsed time: {:?}", elapsed);
             }
 
             result.iter().for_each(|r| {
-                let borrowed = r.borrow();
                 println!(
-                    "Value: {}, Priority: {}",
-                    borrowed.transitional_node.full_value_as_string(), borrowed.transitional_node.priority
+                    "Value: {}",
+                    r.full_value
                 )
             });
         }
@@ -130,7 +133,7 @@ fn main() {
 
         let trimmed = line.trim();
         let start_of_search = Instant::now();
-        let result = trie.search(&trimmed, args.max_results_count);
+        let result = trie.search(&trimmed);
         let elapsed = start_of_search.elapsed();
         if !args.quiet {
             println!("Elapsed time of search: {:?}, term {}", elapsed, &trimmed);
@@ -138,16 +141,14 @@ fn main() {
 
         if results_to_terminal {
             result.iter().for_each(|r| {
-                let borrowed = r.borrow();
                 println!(
-                    "Value: {}, Priority: {}",
-                    borrowed.transitional_node.full_value_as_string(), borrowed.transitional_node.priority
+                    "Value: {}",
+                    r.full_value
                 )
             });
         } else {
             result.iter().for_each(|r| {
-                let borrowed = r.borrow();
-                results_vector.push(borrowed.transitional_node.full_value_as_string());
+                results_vector.push(r.full_value.clone());
             })
         }
     });
