@@ -1,7 +1,8 @@
 use crate::trie::Trie;
 use clap::Parser;
 use std::fs::File;
-use std::{fs, io::BufRead, io::BufReader, io::stdin, time::Instant};
+use std::{fs, io::stdin, io::BufRead, io::BufReader, time::Instant};
+use deepsize::DeepSizeOf;
 
 mod node;
 mod trie;
@@ -93,6 +94,7 @@ fn main() {
             let elapsed = start.elapsed();
             if !args.quiet {
                 println!("Elapsed time: {:?}", elapsed);
+                println!("Size: {}", DeepSizeOf::deep_size_of(&trie));
             }
 
             result.iter().for_each(|r| {

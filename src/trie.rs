@@ -3,8 +3,9 @@ use std::{
     cell::{RefCell, RefMut},
     rc::Rc,
 };
+use deepsize::DeepSizeOf;
 
-#[derive(Default)]
+#[derive(Default, DeepSizeOf)]
 pub struct Trie {
     root: Rc<RefCell<Node>>,
 }

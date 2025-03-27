@@ -1,13 +1,15 @@
 use fxhash::FxHashMap;
 use std::cell::RefCell;
 use std::rc::Rc;
+use deepsize::DeepSizeOf;
 
+#[derive(DeepSizeOf)]
 pub struct Node {
     pub nodes: Box<FxHashMap<u8, Rc<RefCell<Node>>>>,
     pub transitional_node: Option<TransitionalNode>
 }
 
-#[derive(Default)]
+#[derive(Default, DeepSizeOf)]
 pub struct TransitionalNode {
     pub full_value: Vec<u8>,
     pub priority: i64,
