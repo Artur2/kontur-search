@@ -16,33 +16,14 @@ impl Trie {
         let length: usize = value.len();
         let value_as_bytes = value.as_bytes();
         let transitional_node = TransitionalNode::new(priority, &value);
-
         let mut root_node_mut = &mut self.root;
-        let mut is_next_level = false;
 
         for i in 0..length {
             let symbol = value_as_bytes[i];
-
-            if !is_next_level {
-                // Ничего не задано с рута
-                root_node_mut = Self::create_or_rollout_node(&symbol, root_node_mut);
-                is_next_level = true;
-            } else {
-                // Уже находимся в на уровне ниже рута
-                root_node_mut = Self::create_or_rollout_node(&symbol, root_node_mut);
-            }
+            root_node_mut = Self::create_or_rollout_node(&symbol, root_node_mut);
         }
-
 
         root_node_mut.transitional_node = Some(transitional_node);
-    }
-
-    fn create_or_rollout_node<'a>(symbol: &u8, node: &'a mut Node) -> &'a mut Node {
-        if node.nodes.contains_key(&symbol) {
-            node.nodes.get_mut(&symbol).unwrap()
-        } else {
-            node.nodes.entry(symbol.clone()).or_insert(Node::default())
-        }
     }
 
     pub fn search(&self, value: &str, max_results: i32) -> Vec<&Node> {
@@ -51,8 +32,6 @@ impl Trie {
 
         let value_as_bytes = value.as_bytes();
         let mut root_node = &self.root;
-
-        let mut is_next_level = false;
         let mut is_passed_whole_value = false;
 
         for i in 0..value_length {
@@ -61,21 +40,11 @@ impl Trie {
                 is_passed_whole_value = true;
             }
 
-            if !is_next_level && root_node.nodes.contains_key(&symbol) {
+            if root_node.nodes.contains_key(&symbol) {
                 root_node = &root_node.nodes[&symbol];
-                is_next_level = true;
             } else {
-                let mut found_rolling_node = false;
-
-                if root_node.nodes.contains_key(&symbol) {
-                    root_node = &root_node.nodes[&symbol];
-                    found_rolling_node = true;
-                }
-
-                if !found_rolling_node {
-                    is_passed_whole_value = false;
-                    break;
-                }
+                is_passed_whole_value = false;
+                break;
             }
         }
 
@@ -83,13 +52,33 @@ impl Trie {
             return results;
         }
 
-        let mut nodes_without_childs = Trie::find_nodes_without_childs(root_node);
-        nodes_without_childs.iter().for_each(|node| {
-            let v = *node;
-            results.push(v);
+        let mut nodes_without_childs = Self::find_nodes_without_childs(root_node);
+        nodes_without_childs.sort_by(|a, b| {
+            let node_a = a.transitional_node.as_ref().unwrap();
+            let node_b = b.transitional_node.as_ref().unwrap();
+
+            node_b.priority.cmp(&node_a.priority)
         });
 
-        nodes_without_childs
+        let mut counter = 0;
+        nodes_without_childs.iter().for_each(|node| {
+            if counter == max_results + 1 {
+                return;
+            }
+
+            results.push(*node);
+            counter += 1;
+        });
+
+        results
+    }
+
+    fn create_or_rollout_node<'a>(symbol: &u8, node: &'a mut Node) -> &'a mut Node {
+        if node.nodes.contains_key(&symbol) {
+            node.nodes.get_mut(&symbol).unwrap()
+        } else {
+            node.nodes.entry(symbol.clone()).or_insert(Node::default())
+        }
     }
 
     fn find_nodes_without_childs(node: &Node) -> Vec<&Node> {
@@ -154,13 +143,13 @@ mod tests {
 
         let result = trie.search("aa", 3);
 
-        let borrowed_0 = result[0];
-        let borrowed_1 = result[1];
-        let borrowed_2 = result[2];
+        let value_0 = result[0];
+        let value_1 = result[1];
+        let value_2 = result[2];
 
-        assert_eq!(borrowed_0.transitional_node.as_ref().unwrap().priority, 3);
-        assert_eq!(borrowed_1.transitional_node.as_ref().unwrap().priority, 2);
-        assert_eq!(borrowed_2.transitional_node.as_ref().unwrap().priority, 1);
+        assert_eq!(value_0.transitional_node.as_ref().unwrap().priority, 3);
+        assert_eq!(value_1.transitional_node.as_ref().unwrap().priority, 2);
+        assert_eq!(value_2.transitional_node.as_ref().unwrap().priority, 1);
     }
 
     #[test]

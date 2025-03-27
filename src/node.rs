@@ -1,6 +1,4 @@
 use fxhash::FxHashMap;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 pub struct Node {
     pub nodes: Box<FxHashMap<u8, Node>>,
@@ -15,8 +13,7 @@ pub struct TransitionalNode {
 
 impl Node {
     pub fn new() -> Node {
-        let mut default = Node::default();
-        default
+        Node::default()
     }
 }
 
