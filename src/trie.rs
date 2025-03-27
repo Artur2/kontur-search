@@ -1,18 +1,14 @@
 use crate::node::*;
-use std::{
-    cell::{RefCell, RefMut},
-    rc::Rc,
-};
 
 #[derive(Default)]
 pub struct Trie {
-    root: Rc<RefCell<Node>>,
+    root: Node,
 }
 
 impl Trie {
     pub fn new() -> Trie {
         Trie {
-            root: Rc::default(),
+            root: Node::default(),
         }
     }
 
@@ -21,8 +17,7 @@ impl Trie {
         let value_as_bytes = value.as_bytes();
         let transitional_node = TransitionalNode::new(priority, &value);
 
-        let mut root_node_mut = self.root.borrow_mut();
-        let mut rolling_node_rc = Rc::default();
+        let mut root_node_mut = &mut self.root;
         let mut is_next_level = false;
 
         for i in 0..length {
@@ -30,43 +25,34 @@ impl Trie {
 
             if !is_next_level {
                 // Ничего не задано с рута
-                rolling_node_rc = Trie::create_or_rollout_another_symbol(
-                    &symbol,
-                    &mut root_node_mut,
-                );
+                root_node_mut = Self::create_or_rollout_node(&symbol, root_node_mut);
                 is_next_level = true;
             } else {
                 // Уже находимся в на уровне ниже рута
-                let new_rolling_node_rc;
-                match rolling_node_rc.try_borrow_mut() {
-                    Ok(mut inner_node_mut) => {
-                        new_rolling_node_rc = Trie::create_or_rollout_another_symbol(
-                            &symbol,
-                            &mut inner_node_mut,
-                        );
-                    }
-                    Err(_) => {
-                        panic!("Какого хрена мы не можем заимствовать")
-                    }
-                }
-
-                rolling_node_rc = new_rolling_node_rc;
+                root_node_mut = Self::create_or_rollout_node(&symbol, root_node_mut);
             }
         }
 
-        let mut rolled_node = rolling_node_rc.borrow_mut();
-        rolled_node.transitional_node = Some(transitional_node);
+
+        root_node_mut.transitional_node = Some(transitional_node);
     }
 
-    pub fn search(&self, value: &str, max_results: i32) -> Vec<Rc<RefCell<Node>>> {
+    fn create_or_rollout_node<'a>(symbol: &u8, node: &'a mut Node) -> &'a mut Node {
+        if node.nodes.contains_key(&symbol) {
+            node.nodes.get_mut(&symbol).unwrap()
+        } else {
+            node.nodes.entry(symbol.clone()).or_insert(Node::default())
+        }
+    }
+
+    pub fn search(&self, value: &str, max_results: i32) -> Vec<&Node> {
         let mut results = Vec::new();
         let value_length: usize = value.len();
 
         let value_as_bytes = value.as_bytes();
-        let root_node = self.root.borrow();
+        let mut root_node = &self.root;
 
         let mut is_next_level = false;
-        let mut rolling_node_rc = Rc::default();
         let mut is_passed_whole_value = false;
 
         for i in 0..value_length {
@@ -76,26 +62,17 @@ impl Trie {
             }
 
             if !is_next_level && root_node.nodes.contains_key(&symbol) {
-                rolling_node_rc = root_node.nodes[&symbol].clone();
+                root_node = &root_node.nodes[&symbol];
                 is_next_level = true;
             } else {
-                let mut new_rolling_node_rc = Rc::default();
                 let mut found_rolling_node = false;
-                match rolling_node_rc.try_borrow_mut() {
-                    Ok(inner_node_mut) => {
-                        if inner_node_mut.nodes.contains_key(&symbol) {
-                            new_rolling_node_rc = inner_node_mut.nodes[&symbol].clone();
-                            found_rolling_node = true;
-                        }
-                    }
-                    Err(_) => {
-                        panic!("Cannot borrow value?");
-                    }
+
+                if root_node.nodes.contains_key(&symbol) {
+                    root_node = &root_node.nodes[&symbol];
+                    found_rolling_node = true;
                 }
 
-                if found_rolling_node {
-                    rolling_node_rc = new_rolling_node_rc;
-                } else {
+                if !found_rolling_node {
                     is_passed_whole_value = false;
                     break;
                 }
@@ -106,80 +83,48 @@ impl Trie {
             return results;
         }
 
-        let mut nodes_without_childs = Trie::find_nodes_without_childs(Rc::clone(&rolling_node_rc));
-
-        nodes_without_childs.sort_by(|a, b| {
-            let b_borrowed = b.borrow();
-            let a_borrowed = a.borrow();
-
-            let b_transitional_node = b_borrowed.transitional_node.as_ref().unwrap();
-            let a_transitional_node = a_borrowed.transitional_node.as_ref().unwrap();
-            return b_transitional_node
-                .priority
-                .cmp(&a_transitional_node.priority);
-        });
-
-        let mut count = 0;
+        let mut nodes_without_childs = Trie::find_nodes_without_childs(root_node);
         nodes_without_childs.iter().for_each(|node| {
-            if count == max_results {
-                return;
-            }
-
-            count += 1;
-            results.push(Rc::clone(node));
+            let v = *node;
+            results.push(v);
         });
 
-        results
+        nodes_without_childs
     }
 
-    fn find_nodes_without_childs(node: Rc<RefCell<Node>>) -> Vec<Rc<RefCell<Node>>> {
+    fn find_nodes_without_childs(node: &Node) -> Vec<&Node> {
         let mut stack = vec![];
-        let mut nodes_without_childs: Vec<Rc<RefCell<Node>>> = vec![];
+        let mut nodes_without_childs: Vec<&Node> = vec![];
 
         stack.push(node);
 
         while !stack.is_empty() {
-            let inner_node_rc = stack.pop().unwrap();
-            let inner_node = inner_node_rc.borrow();
+            let inner_node = stack.pop().unwrap();
 
             if inner_node.nodes.len() == 0 {
-                nodes_without_childs.push(inner_node_rc.clone());
+                nodes_without_childs.push(inner_node);
                 continue;
             }
 
             inner_node.nodes.iter().for_each(|kvp| {
-                stack.push(kvp.1.clone());
+                stack.push(kvp.1);
             });
         }
+
         nodes_without_childs
-    }
-
-    fn create_node_with_transition() -> Rc<RefCell<Node>> {
-        let node = Node::new();
-        let new_node_cell = RefCell::new(node); // mutable mem location
-        let new_node_rc = Rc::from(new_node_cell); // reference to location
-        new_node_rc
-    }
-
-    fn create_or_rollout_another_symbol(
-        symbol: &u8,
-        node: &mut RefMut<Node>,
-    ) -> Rc<RefCell<Node>> {
-        if !node.nodes.contains_key(symbol) {
-            let new_node_rc = Trie::create_node_with_transition();
-            let cloned_rc_from_new_node_rc = Rc::clone(&new_node_rc);
-            node.nodes.insert(symbol.clone(), new_node_rc);
-            cloned_rc_from_new_node_rc
-        } else {
-            let existing_rc = Rc::clone(&node.nodes[symbol]);
-            existing_rc
-        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    pub fn should_correct_add() {
+        let mut trie = Trie::new();
+
+        trie.add("test test", 2);
+    }
 
     #[test]
     pub fn after_add_is_available() {
@@ -209,9 +154,9 @@ mod tests {
 
         let result = trie.search("aa", 3);
 
-        let borrowed_0 = result[0].borrow();
-        let borrowed_1 = result[1].borrow();
-        let borrowed_2 = result[2].borrow();
+        let borrowed_0 = result[0];
+        let borrowed_1 = result[1];
+        let borrowed_2 = result[2];
 
         assert_eq!(borrowed_0.transitional_node.as_ref().unwrap().priority, 3);
         assert_eq!(borrowed_1.transitional_node.as_ref().unwrap().priority, 2);
@@ -227,8 +172,8 @@ mod tests {
         let first_result = trie.search("a", 1);
         let second_result = trie.search("b", 1);
 
-        let borrowed_0 = first_result[0].borrow();
-        let borrowed_1 = second_result[0].borrow();
+        let borrowed_0 = first_result[0];
+        let borrowed_1 = second_result[0];
 
         assert_eq!(first_result.len(), 1);
         assert_eq!(second_result.len(), 1);

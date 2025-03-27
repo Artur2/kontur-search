@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 pub struct Node {
-    pub nodes: Box<FxHashMap<u8, Rc<RefCell<Node>>>>,
+    pub nodes: Box<FxHashMap<u8, Node>>,
     pub transitional_node: Option<TransitionalNode>
 }
 

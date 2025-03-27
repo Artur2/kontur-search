@@ -96,7 +96,7 @@ fn main() {
             }
 
             result.iter().for_each(|r| {
-                let borrowed = r.borrow();
+                let borrowed = *r;
                 let transitional_node = borrowed.transitional_node.as_ref().unwrap();
                 println!(
                     "Value: {}, Priority: {}",
@@ -139,7 +139,7 @@ fn main() {
 
         if results_to_terminal {
             result.iter().for_each(|r| {
-                let borrowed = r.borrow();
+                let borrowed = *r;
                 let transitional_node = borrowed.transitional_node.as_ref().unwrap();
                 println!(
                     "Value: {}, Priority: {}",
@@ -148,7 +148,7 @@ fn main() {
             });
         } else {
             result.iter().for_each(|r| {
-                let borrowed = r.borrow();
+                let borrowed = *r;
                 let transitional_node = borrowed.transitional_node.as_ref().unwrap();
                 results_vector.push(transitional_node.full_value_as_string());
             })
