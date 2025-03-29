@@ -27,11 +27,7 @@ impl Trie {
     }
 
     pub fn contains(&self, value: &str) -> bool {
-        let result = self.rollout_node(&value);
-        match result {
-            None => false,
-            Some(_) => true,
-        }
+        self.rollout_node(&value).is_some()
     }
 
     pub fn search(&self, value: &str, max_results: i32) -> Vec<&Node> {
@@ -44,7 +40,7 @@ impl Trie {
 
         let found = found.unwrap();
 
-        let mut nodes_without_childs = Self::find_nodes_without_childs(found);
+        let mut nodes_without_childs = Self::find_nodes_without_childs(found, max_results as usize);
         nodes_without_childs.sort_by(|a, b| {
             let node_a = a.transitional_node.as_ref().unwrap();
             let node_b = b.transitional_node.as_ref().unwrap();
@@ -100,7 +96,7 @@ impl Trie {
         }
     }
 
-    fn find_nodes_without_childs(node: &Node) -> Vec<&Node> {
+    fn find_nodes_without_childs(node: &Node, max_values: usize) -> Vec<&Node> {
         let mut stack = vec![];
         let mut nodes_without_childs: Vec<&Node> = vec![];
 
@@ -111,6 +107,10 @@ impl Trie {
 
             if inner_node.nodes.len() == 0 {
                 nodes_without_childs.push(inner_node);
+                if nodes_without_childs.len() >= max_values {
+                    break;
+                }
+
                 continue;
             }
 
