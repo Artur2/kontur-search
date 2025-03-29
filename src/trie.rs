@@ -36,7 +36,7 @@ impl Trie {
 
     pub fn search(&self, value: &str, max_results: i32) -> Vec<&Node> {
         let mut results = Vec::new();
-        let found= self.rollout_node(value);
+        let found = self.rollout_node(value);
 
         if found.is_none() {
             return results;
