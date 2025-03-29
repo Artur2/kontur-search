@@ -26,33 +26,25 @@ impl Trie {
         root_node_mut.transitional_node = Some(transitional_node);
     }
 
+    pub fn contains(self, value: &str) -> bool {
+        let result = self.rollout_node(&value);
+        match result {
+            None => false,
+            Some(_) => true,
+        }
+    }
+
     pub fn search(&self, value: &str, max_results: i32) -> Vec<&Node> {
         let mut results = Vec::new();
-        let value_length: usize = value.len();
+        let found= self.rollout_node(value);
 
-        let value_as_bytes = value.as_bytes();
-        let mut root_node = &self.root;
-        let mut is_passed_whole_value = false;
-
-        for i in 0..value_length {
-            let symbol = value_as_bytes[i];
-            if i == value_length - 1 {
-                is_passed_whole_value = true;
-            }
-
-            if root_node.nodes.contains_key(&symbol) {
-                root_node = &root_node.nodes[&symbol];
-            } else {
-                is_passed_whole_value = false;
-                break;
-            }
-        }
-
-        if is_passed_whole_value == false {
+        if found.is_none() {
             return results;
         }
 
-        let mut nodes_without_childs = Self::find_nodes_without_childs(root_node);
+        let found = found.unwrap();
+
+        let mut nodes_without_childs = Self::find_nodes_without_childs(found);
         nodes_without_childs.sort_by(|a, b| {
             let node_a = a.transitional_node.as_ref().unwrap();
             let node_b = b.transitional_node.as_ref().unwrap();
@@ -73,11 +65,38 @@ impl Trie {
         results
     }
 
+    fn rollout_node(&self, value: &str) -> Option<&Node> {
+        let value_length: usize = value.len();
+        let value_as_bytes: &[u8] = value.as_bytes();
+        let mut root_node = &self.root;
+        let mut is_passed_whole_value = false;
+
+        for i in 0..value_length {
+            let symbol = value_as_bytes[i];
+            if i == value_length - 1 {
+                is_passed_whole_value = true;
+            }
+
+            if root_node.nodes.contains_key(&symbol) {
+                root_node = &root_node.nodes[&symbol];
+            } else {
+                is_passed_whole_value = false;
+                break;
+            }
+        }
+
+        if is_passed_whole_value {
+            Some(&root_node)
+        } else {
+            None
+        }
+    }
+
     fn create_or_rollout_node<'a>(symbol: &u8, node: &'a mut Node) -> &'a mut Node {
         if node.nodes.contains_key(&symbol) {
             node.nodes.get_mut(&symbol).unwrap()
         } else {
-            node.nodes.entry(symbol.clone()).or_insert(Node::default())
+            node.nodes.entry(symbol.clone()).or_insert(Node::new())
         }
     }
 
@@ -172,7 +191,7 @@ mod tests {
 
     #[test]
     pub fn not_find_value_with_empty() {
-        let trie = Trie::new();
+        let mut trie = Trie::new();
         let result = trie.search("aaa", 1);
 
         assert_eq!(result.len(), 0);
@@ -210,5 +229,28 @@ mod tests {
 
         let result = trie.search("lapsed", 3);
         assert_eq!(0, result.len());
+    }
+
+    #[test]
+    pub fn search_should_not_find_value() {
+        let mut trie = Trie::new();
+        trie.add("lapse", 1);
+        trie.add("lap", 2);
+
+        let result = trie.search("lapsed", 3);
+        assert_eq!(0, result.len());
+    }
+
+    #[test]
+    pub fn contain_should_work_properly() {
+        let mut trie = Trie::new();
+        trie.add("lapse", 1);
+        trie.add("lap", 2);
+
+        let result = trie.contains("lap");
+        assert_eq!(true, result);
+
+        let result = trie.contains("lapse");
+        assert_eq!(true, result);
     }
 }
