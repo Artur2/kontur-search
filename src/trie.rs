@@ -26,7 +26,7 @@ impl Trie {
         root_node_mut.transitional_node = Some(transitional_node);
     }
 
-    pub fn contains(self, value: &str) -> bool {
+    pub fn contains(&self, value: &str) -> bool {
         let result = self.rollout_node(&value);
         match result {
             None => false,
