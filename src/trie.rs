@@ -27,7 +27,10 @@ impl Trie {
     }
 
     pub fn contains(&self, value: &str) -> bool {
-        self.rollout_node(&value).is_some()
+        match self.rollout_node(&value) {
+            None => false,
+            Some(node) => node.transitional_node.is_some(),
+        }
     }
 
     pub fn search(&self, value: &str, max_results: i32) -> Vec<&Node> {
@@ -252,5 +255,18 @@ mod tests {
 
         let result = trie.contains("lapse");
         assert_eq!(true, result);
+    }
+
+    #[test]
+    pub fn not_contains() {
+        let mut trie = Trie::new();
+        trie.add("lapse", 1);
+        trie.add("lap", 2);
+
+        let result = trie.contains("laps");
+        assert_eq!(false, result);
+
+        let result = trie.contains("lapse1");
+        assert_eq!(false, result);
     }
 }
