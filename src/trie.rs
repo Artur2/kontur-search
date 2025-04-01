@@ -108,7 +108,7 @@ impl Trie {
         while !stack.is_empty() {
             let inner_node = stack.pop().unwrap();
 
-            if inner_node.nodes.len() == 0 {
+            if inner_node.nodes.len() == 0 && inner_node.transitional_node.is_some() {
                 nodes_without_childs.push(inner_node);
                 if nodes_without_childs.len() >= max_values {
                     break;
