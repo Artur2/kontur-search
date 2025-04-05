@@ -1,3 +1,4 @@
+use crate::node::Node;
 use crate::trie::Trie;
 use clap::Parser;
 use std::fs::File;
@@ -42,8 +43,8 @@ fn main() {
         return;
     }
 
-    if let Err(_) = fs::exists(&args.words_source_path) {
-        println!("Words source path does not exist");
+    if let Err(error) = fs::exists(&args.words_source_path) {
+        println!("Words source path does not exist, {}", error);
         return;
     }
 
@@ -95,13 +96,7 @@ fn main() {
                 println!("Elapsed time: {:?}", elapsed);
             }
 
-            result.iter().for_each(|r| {
-                let transitional_node = r.transitional_node.as_ref().unwrap();
-                println!(
-                    "Value: {}, Priority: {}",
-                    transitional_node.full_value_as_string(), transitional_node.priority
-                )
-            });
+            print_values(&result);
         }
     }
 
@@ -137,13 +132,7 @@ fn main() {
         }
 
         if results_to_terminal {
-            result.iter().for_each(|r| {
-                let transitional_node = r.transitional_node.as_ref().unwrap();
-                println!(
-                    "Value: {}, Priority: {}",
-                    transitional_node.full_value_as_string(), transitional_node.priority
-                )
-            });
+            print_values(&result);
         } else {
             result.iter().for_each(|r| {
                 let transitional_node = r.transitional_node.as_ref().unwrap();
@@ -160,4 +149,15 @@ fn main() {
             println!("result of search is written to file");
         }
     }
+}
+
+fn print_values(nodes: &Vec<&Node>) {
+    nodes.iter().for_each(|r| {
+        let transitional_node = r.transitional_node.as_ref().unwrap();
+        println!(
+            "Value: {}, Priority: {}",
+            transitional_node.full_value_as_string(),
+            transitional_node.priority
+        )
+    });
 }
