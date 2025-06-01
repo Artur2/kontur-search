@@ -13,6 +13,10 @@ impl Trie {
     }
 
     pub fn add(&mut self, value: &str, priority: i64) {
+        assert!(priority >= 0, "priority must be non-negative");
+        assert_ne!(value, String::default(), "value must be non empty");
+        assert!(value.len() > 0, "value must be non empty");
+
         let length: usize = value.len();
         let value_as_bytes = value.as_bytes();
         let transitional_node = TransitionalNode::new(priority, &value);
@@ -27,6 +31,9 @@ impl Trie {
     }
 
     pub fn contains(&self, value: &str) -> bool {
+        assert_ne!(value, String::default(), "value must be non empty");
+        assert!(value.len() > 0, "value must be non empty");
+
         match self.rollout_node(&value) {
             None => false,
             Some(node) => node.transitional_node.is_some(),
@@ -34,6 +41,10 @@ impl Trie {
     }
 
     pub fn search(&self, value: &str, max_results: i32) -> Vec<&Node> {
+        assert!(max_results > 0, "max_results must be greater than 0");
+        assert_ne!(value, String::default(), "value must be non empty");
+        assert!(value.len() > 0, "value must be non empty");
+
         let mut results = Vec::new();
         let found = self.rollout_node(value);
 
@@ -268,5 +279,64 @@ mod tests {
 
         let result = trie.contains("lapse1");
         assert_eq!(false, result);
+    }
+
+    #[test]
+    #[should_panic]
+    pub fn should_validate_on_add_value() {
+        let mut trie = Trie::new();
+
+        trie.add("", 0);
+    }
+
+    #[test]
+    #[should_panic]
+    pub fn should_validate_on_add_priority() {
+        let mut trie = Trie::new();
+
+        trie.add("test", -1);
+    }
+
+    #[test]
+    #[should_panic]
+    pub fn should_validate_on_add_default_value() {
+        let mut trie = Trie::new();
+
+        trie.add(&String::default().to_owned(), 1);
+    }
+
+    #[test]
+    #[should_panic]
+    pub fn should_validate_value_on_contains() {
+        let trie = Trie::new();
+        trie.contains("");
+    }
+
+    #[test]
+    #[should_panic]
+    pub fn should_validate_value_length_on_contains() {
+        let trie = Trie::new();
+        trie.contains(&String::default());
+    }
+
+    #[test]
+    #[should_panic]
+    pub fn should_validate_value_on_search() {
+        let trie = Trie::new();
+        trie.search("", 1);
+    }
+
+    #[test]
+    #[should_panic]
+    pub fn should_validate_value_length_on_search() {
+        let trie = Trie::new();
+        trie.search(&String::default(), 1);
+    }
+
+    #[test]
+    #[should_panic]
+    pub fn should_validate_max_results_on_search() {
+        let trie = Trie::new();
+        trie.search("test", 0);
     }
 }
