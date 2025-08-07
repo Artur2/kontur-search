@@ -4,6 +4,11 @@ use clap::Parser;
 use std::fs::File;
 use std::{fs, io::BufRead, io::BufReader, io::stdin, time::Instant};
 
+use mimalloc::MiMalloc;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
+
 mod node;
 mod trie;
 
@@ -36,8 +41,7 @@ pub struct Cli {
 }
 
 fn main() {
-    let mut args = Cli::parse();
-
+    let args = Cli::parse();
     if args.words_source_path.is_empty() {
         println!("Words source path is empty");
         return;

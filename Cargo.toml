@@ -14,3 +14,4 @@ panic = "abort"
 [dependencies]
 clap = { version = "4.5.33", features = ["derive"] }
 fxhash = "0.2.1"
+mimalloc = "0.1.47"
