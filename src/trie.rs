@@ -23,8 +23,8 @@ impl Trie {
         let mut root_node_mut = &mut self.root;
 
         for i in 0..length {
-            let symbol = value_as_bytes[i];
-            root_node_mut = Self::create_or_rollout_node(&symbol, root_node_mut);
+            let symbol = &value_as_bytes[i];
+            root_node_mut = Self::create_or_rollout_node(symbol, root_node_mut);
         }
 
         root_node_mut.transitional_node = Some(transitional_node);
