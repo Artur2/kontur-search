@@ -14,8 +14,8 @@ impl Trie {
 
     pub fn add(&mut self, value: &str, priority: i64) {
         assert!(priority >= 0, "priority must be non-negative");
-        assert_ne!(value, String::default(), "value must be non empty");
-        assert!(value.len() > 0, "value must be non empty");
+        assert_ne!(value, String::default(), "value must be non-empty");
+        assert!(value.len() > 0, "value must be non-empty");
 
         let length: usize = value.len();
         let value_as_bytes = value.as_bytes();
@@ -30,9 +30,10 @@ impl Trie {
         root_node_mut.transitional_node = Some(transitional_node);
     }
 
+    #[allow(dead_code)]
     pub fn contains(&self, value: &str) -> bool {
-        assert_ne!(value, String::default(), "value must be non empty");
-        assert!(value.len() > 0, "value must be non empty");
+        assert_ne!(value, String::default(), "value must be non-empty");
+        assert!(value.len() > 0, "value must be non-empty");
 
         match self.rollout_node(&value) {
             None => false,
@@ -42,8 +43,8 @@ impl Trie {
 
     pub fn search(&self, value: &str, max_results: i32) -> Vec<&Node> {
         assert!(max_results > 0, "max_results must be greater than 0");
-        assert_ne!(value, String::default(), "value must be non empty");
-        assert!(value.len() > 0, "value must be non empty");
+        assert_ne!(value, String::default(), "value must be non-empty");
+        assert!(value.len() > 0, "value must be non-empty");
 
         let mut results = Vec::new();
         let found = self.rollout_node(value);
