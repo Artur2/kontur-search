@@ -206,7 +206,7 @@ mod tests {
 
     #[test]
     pub fn not_find_value_with_empty() {
-        let mut trie = Trie::new();
+        let trie = Trie::new();
         let result = trie.search("aaa", 1);
 
         assert_eq!(result.len(), 0);
